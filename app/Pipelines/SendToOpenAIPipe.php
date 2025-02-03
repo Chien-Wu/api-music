@@ -19,11 +19,23 @@ class SendToOpenAIPipe
                     'Content-Type'  => 'application/json',
                 ],
                 'json' => [
-                    'model'    => 'gpt-4o-mini', // 模型名稱依實際需求調整
+                    'model'    => 'gpt-4o-mini', // 根據實際需求調整模型名稱
                     'messages' => [
                         [
                             'role'    => 'system',
-                            'content' => '你是一個根據使用者輸入句子判斷情緒分數的助手。請依據輸入的句子，回傳一個 JSON 物件，包含以下情緒鍵：content, sad, angry, relax, love, party，每個鍵的值為 0 到 1 之間、保留三位小數的分數。例如：{"content":0.750, "sad":0.100, "angry":0.050, "relax":0.800, "love":0.400, "party":0.300}。',
+                            'content' => '你是一個根據使用者輸入句子判斷情緒分數的助手。請根據輸入的句子，嚴格回傳符合以下 JSON Schema 的回應，且不要包含任何其他文字或標記。JSON Schema 如下：{
+                                "type": "object",
+                                "properties": {
+                                    "content": {"type": "number"},
+                                    "sad": {"type": "number"},
+                                    "angry": {"type": "number"},
+                                    "relax": {"type": "number"},
+                                    "love": {"type": "number"},
+                                    "party": {"type": "number"}
+                                },
+                                "required": ["content", "sad", "angry", "relax", "love", "party"],
+                                "additionalProperties": false
+                            }。例如：{"content": 0.750, "sad": 0.100, "angry": 0.050, "relax": 0.800, "love": 0.400, "party": 0.300}',
                         ],
                         [
                             'role'    => 'user',
@@ -32,14 +44,32 @@ class SendToOpenAIPipe
                     ],
                     'max_tokens'  => 50,
                     'temperature' => 0,
+                    'response_format' => [
+                        'type' => 'json_schema',
+                        'json_schema' => [
+                            'name' => 'emotionScores', // 必要的名稱參數
+                            'strict' => true,
+                            'schema' => [
+                                'type' => 'object',
+                                'properties' => [
+                                    'content' => ['type' => 'number'],
+                                    'sad'     => ['type' => 'number'],
+                                    'angry'   => ['type' => 'number'],
+                                    'relax'   => ['type' => 'number'],
+                                    'love'    => ['type' => 'number'],
+                                    'party'   => ['type' => 'number'],
+                                ],
+                                'required' => ['content', 'sad', 'angry', 'relax', 'love', 'party'],
+                                'additionalProperties' => false, // 禁止額外屬性
+                            ],
+                        ],
+                    ],
                 ],
             ]);
         } catch (\Exception $e) {
-            // 如果發生錯誤，可拋出例外讓後續處理捕捉
             throw new \Exception('呼叫 OpenAI API 失敗: ' . $e->getMessage());
         }
         
-        // 將原始回傳的內容存入資料陣列中
         $body = json_decode($response->getBody(), true);
         $data['rawResponse'] = $body['choices'][0]['message']['content'] ?? '';
 
