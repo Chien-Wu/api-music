@@ -14,7 +14,4 @@ use App\Http\Controllers\MusicController;
 |
 */
 
-Route::get('/', function () {
-    return 'laravel connected!';
-});
-Route::get('/suggestions', [MusicController::class, 'randomTen']);
+
