@@ -101,12 +101,20 @@ class FetchSongPipe
             }
         }
         
+        // 若找不到符合推薦條件的歌曲，直接隨機挑選一首
         if (empty($candidates)) {
-            throw new \Exception('找不到符合推薦條件的歌曲');
+            // 從資料庫中取出所有歌曲
+            $allSongs = Music::all();
+            if ($allSongs->isEmpty()) {
+                throw new \Exception('資料庫中沒有任何歌曲');
+            }
+            // 隨機選取一首歌曲
+            $bestSong = $allSongs->random();
+        } else {
+            // 如果有多首符合條件的歌曲，隨機挑選一首
+            $bestSong = $candidates[array_rand($candidates)];
         }
         
-        // 如果有多首符合條件的歌曲，隨機挑選一首
-        $bestSong = $candidates[array_rand($candidates)];
         $data['recommend'] = $bestSong;
         
         return $next($data);
